@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Prometheus.Client;
@@ -19,7 +21,7 @@ namespace RTL433_exporter
         {
             var fileName = args[0];
 
-            var metricServer = new MetricServer(null, new MetricServerOptions {Port = 58433});
+            var metricServer = new MetricServer(null, new MetricServerOptions {Port = 58433, Host = Debugger.IsAttached ? "127.0.0.1" : "*"});
             try
             {
                 metricServer.Start();
@@ -36,10 +38,12 @@ namespace RTL433_exporter
                             if (line != null)
                             {
                                 Console.WriteLine();
+                                Console.WriteLine(line);
                                 o.OnNext(line);
                             }
                             else
                             {
+                                Console.Write(".");
                                 await Task.Delay(1000, cancel);
                             }
                         }
@@ -56,6 +60,10 @@ namespace RTL433_exporter
                         gauge.WithLabels(m.LabelValues)
                             .Set(m.Value, DateTimeOffset.Now);
                     });
+
+                var mre = new ManualResetEvent(false);
+                Console.CancelKeyPress += (sender, eventArgs) => mre.Set();
+                mre.WaitOne();
             }
             finally
             {
