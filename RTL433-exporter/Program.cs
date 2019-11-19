@@ -56,7 +56,7 @@ namespace RTL433_exporter
                     .Subscribe(m =>
                     {
                         if (!metrics.TryGetValue(m.Unique, out var gauge))
-                            gauge = Metrics.CreateGauge(m.Name, "", true, "model", "channel", "id", "unique");
+                            gauge = Metrics.CreateGauge("rtl433_" + m.Name, "", true, "model", "channel", "id", "unique");
                         gauge.WithLabels(m.LabelValues)
                             .Set(m.Value, DateTimeOffset.Now);
                     });
